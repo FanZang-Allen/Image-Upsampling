@@ -146,9 +146,20 @@ def optimize_loop(H_prime_y, H, l_t, k, a, b, kernel_sigma=1.5, lamda_one=0.3, l
     H_y_grad_fft = np.fft.fft2(full_f1)
 
     H_star_arr = np.zeros((100, H_prime_y.shape[0], H_prime_y.shape[1]), dtype=np.float64)
-
+    
+    mu_stop = False
+    prev_mu_x = np.zeros(H_x_gradient.shape)
+    prev_mu_y = np.zeros(H_y_gradient.shape)
+    
     for i in range(100):
-        mu_x, mu_y = mu_optimize(l_t, k, a, b, lambda_1, lambda_2, H_x_gradient, H_y_gradient)
+        if not mu_stop:
+            mu_x, mu_y = mu_optimize(l_t, k, a, b, lambda_1, lambda_2, H_x_gradient, H_y_gradient)
+            x_diff = (mu_x - prev_mu_x).max()
+            y_diff = (mu_y - prev_mu_y).max()
+            if x_diff < 0.001 and y_diff < 0.001:
+                mu_stop = True
+            prev_mu_x = mu_x
+            prev_mu_y = mu_y
         H_star = H_optimize(f_fft, H_prime_fft, lambda_2, H_x_grad_fft, H_y_grad_fft, mu_x, mu_y)
         H_star_arr[i] = 1 - H_star
         lambda_2 *= 3
